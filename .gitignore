@@ -1,0 +1,9 @@
+*.pyc
+*.log
+__pycache__/
+secrets.json
+deletion.py
+scrap.py
+/shelf/
+/workspace.xml
+scraper_log.log
