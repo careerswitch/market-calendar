@@ -3,11 +3,6 @@ name: Create calendar
 on:
   schedule:
     - cron: "10 6 * * *"
-  pull_request:
-    branches:
-      - main
-    types:
-      closed
   workflow_dispatch:
 
 concurrency:
