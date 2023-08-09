@@ -1,0 +1,8 @@
+*.pyc
+*.log
+__pycache__/
+secrets.json
+deletion.py
+/shelf/
+/workspace.xml
+githacks.txt
