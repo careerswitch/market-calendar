@@ -10,7 +10,7 @@ Option 1: One-Click Download
 
 Option 2: Hassle-Free Subscription
 
-1. 📝 Copy the ICS URL: https://example.com/market-calendar-bucket/Market.ics
+1. 📝 Copy the ICS URL: https://storage.googleapis.com/market-calendar-bucket/Market.ics
 2. 📅 Open your favorite calendar app: (Google Calendar, Apple Calendar, Outlook, etc.)
 3. ➕ Find the "Subscribe" option: Look for an option to add a new calendar or subscribe to a calendar. It's usually just a tap away!
 4. 📋 Paste the ICS URL: Select the option to "Subscribe" or "Add Calendar by URL," and paste the copied ICS URL in the provided field.
