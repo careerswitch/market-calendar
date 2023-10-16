@@ -66,10 +66,3 @@ jobs:
       - name: Upload Log File to GCS
         run: |
           gsutil cp scraper_log.log gs://market-calendar-bucket/
-
-      - name: Scheduled job to keep the workflow active
-        run: |
-          if [ "$(date +\%u)" -eq "1" ]; then
-            echo "Rerunning the workflow on a Monday to keep it active."
-            curl -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }}/actions/workflows/${{ github.workflow }}/dispatches -d '{"ref":"main"}'
-          fi
