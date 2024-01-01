@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 
 import os
-import requests
-from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 import icalendar
 import logging
 from fake_useragent import UserAgent
 import pandas as pd
 from google.cloud import storage
+import requests
+from bs4 import BeautifulSoup
 
 # Configure logging
 logging.basicConfig(filename='scraper_log.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -27,7 +27,7 @@ def make_request(url, timeout=10):
         raise
 
 
-# Function to scrape events  calendar
+# Function to scrape events calendar
 def scrape_events_calendar():
     try:
         url = os.environ.get("EVENT_URL")
@@ -57,45 +57,6 @@ def scrape_events_calendar():
         logging.error(f"An error occurred while scraping the events website: {str(e)}")
 
 
-# Function to scrape schedule calendar
-def scrape_schedule_calendar():
-    try:
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (iPad; CPU OS 12_2 like Mac OS X) '
-                          'AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148'
-        }
-        schedule_url = os.environ.get("SCHEDULE_URL")
-        page = requests.get(schedule_url, headers=headers)
-        page.raise_for_status()
-        soup = BeautifulSoup(page.content, "html.parser")
-        tbody = soup.find('tbody')
-        rows = tbody.find_all('tr')
-        data = []
-        for row in rows:
-            cells = row.find_all('td')
-            event = cells[0].text.strip()
-            date = cells[1].text.strip()
-            status = cells[2].text.strip()
-            data.append((event, date, status))
-        df = pd.DataFrame(data, columns=['Events', 'Dates', 'Status'])
-        cal = icalendar.Calendar()
-        for index, row in df.iterrows():
-            event_name = row['Events']
-            event_date = datetime.strptime(row['Dates'], '%B %d, %Y')
-            event_status = row['Status']
-            if "Early Close" not in event_name:
-                event_name += " (Closed)"
-
-            event = icalendar.Event()
-            event.add('summary', event_name)
-            event.add('dtstart', event_date)
-            event.add('dtend', event_date)
-            cal.add_component(event)
-        return cal
-    except Exception as e:
-        logging.error(f"An error occurred while scraping the schedule website: {str(e)}")
-
-
 def save_calendar_to_gcs(calendar):
     try:
         # Save the calendar file locally
@@ -120,7 +81,7 @@ def save_calendar_to_gcs(calendar):
         logging.error(f"An error occurred while saving the calendar to Google Cloud Storage: {str(e)}")
 
 
-# Function to merge and update the calendar
+# Function to update the calendar
 def update_calendar():
     # Scrape events calendar
     economic_events = scrape_events_calendar()
@@ -137,22 +98,11 @@ def update_calendar():
     else:
         logging.warning("No events found on the events calendar.")
 
-    # Scrape schedule calendar
-    schedule_calendar = scrape_schedule_calendar()
-    if schedule_calendar:
-        # Merge calendars
-        merged_calendar = icalendar.Calendar()
-        merged_calendar.add('prodid', '-//Market Calendar//')
-        merged_calendar.add('version', '2.0')
-        if economics_calendar:
-            for component in economics_calendar.walk():
-                merged_calendar.add_component(component)
-        if schedule_calendar:
-            for component in schedule_calendar.walk():
-                merged_calendar.add_component(component)
-        save_calendar_to_gcs(merged_calendar)
+    # Save and upload the calendar to GCS
+    if economics_calendar:
+        save_calendar_to_gcs(economics_calendar)
     else:
-        logging.warning("No events found on the schedule calendar.")
+        logging.warning("No events to update in the calendar.")
 
 
 # Run the scraper and update the calendar immediately
