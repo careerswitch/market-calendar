@@ -2,7 +2,7 @@ name: Create calendar
 
 on:
   #schedule:
-   # - cron: "10 6 * * *"
+  # - cron: "10 6 * * *"
   workflow_dispatch:
 
 concurrency:
@@ -48,7 +48,6 @@ jobs:
       - name: Run the scraper and update calendar
         run: |
           export EVENT_URL="${{ secrets.EVENT_URL }}"
-          export SCHEDULE_URL="${{ secrets.SCHEDULE_URL }}"
           TZ=UTC python market.py 2>&1 | tee scraper_log.log
 
       - name: Upload file to GCS
