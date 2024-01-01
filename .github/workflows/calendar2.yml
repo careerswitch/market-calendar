@@ -1,4 +1,4 @@
-name: Create calendar
+name: Create calendar 2
 
 on:
   schedule:
@@ -48,7 +48,7 @@ jobs:
         run: |
           export EVENT_URL="${{ secrets.EVENT_URL }}"
           export SCHEDULE_URL="${{ secrets.SCHEDULE_URL }}"
-          TZ=UTC python market.py 2>&1 | tee scraper_log.log
+          TZ=UTC python market2.py 2>&1 | tee scraper_log.log
 
       - name: Upload file to GCS
         run: |
