@@ -1,8 +1,8 @@
 name: Create calendar
 
 on:
-  #schedule:
-  # - cron: "10 6 * * *"
+  schedule:
+    - cron: "10 6 * * *"
   workflow_dispatch:
 
 concurrency:
