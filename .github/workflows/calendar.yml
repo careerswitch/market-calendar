@@ -10,6 +10,7 @@ concurrency:
 
 jobs:
   deploy_upload:
+
     runs-on: ubuntu-latest
 
     steps:
@@ -24,7 +25,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r requirements.txt 
 
       - name: Print Environment Variables
         run: |
@@ -47,7 +48,6 @@ jobs:
       - name: Run the scraper and update calendar
         run: |
           export EVENT_URL="${{ secrets.EVENT_URL }}"
-          export SCHEDULE_URL="${{ secrets.SCHEDULE_URL }}"
           TZ=UTC python market.py 2>&1 | tee scraper_log.log
 
       - name: Upload file to GCS

@@ -57,80 +57,6 @@ def scrape_events_calendar():
         logging.error(f"An error occurred while scraping the events website: {str(e)}")
 
 
-def parse_date(date_str):
-    try:
-        # Try parsing with the specified format
-        return datetime.strptime(date_str, '%B %d, %Y')
-    except ValueError:
-        # If the specified format fails, try a more flexible approach
-        return datetime.strptime(date_str, '%B %d').replace(year=datetime.now().year)
-
-
-def extract_data_from_tr(tr):
-    cells = tr.find_all('td')
-    event = cells[0].text.strip()
-    date = cells[1].text.strip()
-    status = cells[2].text.strip()
-    return event, date, status
-
-
-def scrape_schedule_calendar():
-    try:
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (iPad; CPU OS 12_2 like Mac OS X) '
-                          'AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148'
-        }
-        schedule_url = os.environ.get("SCHEDULE_URL")
-        page = requests.get(schedule_url, headers=headers)
-        page.raise_for_status()
-        soup = BeautifulSoup(page.content, "html.parser")
-
-        # Selector for the parent <tbody> element containing all <tr> elements
-        tbody_selector = "body > div.dialog-off-canvas-main-canvas > div > main > div.page__content > article > div > div:nth-child(3) > div.nsdq-l-layout-container--contained.nsdq-l-layout-container.nsdq-u-padding-top-md.nsdq-u-padding-bottom-md > div > div.nsdq-l-grid__item.layout-right-rail > div:nth-child(2) > div > div > table > tbody"
-
-        # Find the parent <tbody> element
-        tbody = soup.select_one(tbody_selector)
-
-        if tbody:
-            # Find all <tr> elements under the parent <tbody>
-            tr_list = tbody.find_all('tr')
-
-            # Initialize an empty list to store calendar events
-            cal_events = []
-
-            for tr in tr_list:
-                # Extract data from each <tr> element
-                event_name, event_date_str, event_status = extract_data_from_tr(tr)
-
-                # Process event_date_str to get a datetime object
-                event_date = parse_date(event_date_str)
-
-                # Example: Add event to the list of calendar events
-                cal_events.append({
-                    'summary': event_name,
-                    'dtstart': event_date,
-                    'dtend': event_date,
-                })
-
-            # Example: Create an iCalendar with all events
-            cal = icalendar.Calendar()
-            for event_data in cal_events:
-                event = icalendar.Event()
-                event.add('summary', event_data['summary'])
-                event.add('dtstart', event_data['dtstart'])
-                event.add('dtend', event_data['dtend'])
-                cal.add_component(event)
-
-            return cal
-
-        else:
-            logging.warning("Parent <tbody> not found")
-
-    except Exception as e:
-        logging.exception(f"An error occurred: {str(e)}")
-        raise
-
-
 def save_calendar_to_gcs(calendar):
     try:
         # Save the calendar file locally
@@ -155,48 +81,28 @@ def save_calendar_to_gcs(calendar):
         logging.error(f"An error occurred while saving the calendar to Google Cloud Storage: {str(e)}")
 
 
-# Function to merge and update the calendar
+# Function to update the calendar
 def update_calendar():
-    try:
-        # Scrape events calendar
-        economic_events = scrape_events_calendar()
-        if economic_events:
-            economics_calendar = icalendar.Calendar()
-            for event in economic_events:
-                dt = datetime.strptime(event["date"] + " " + event["time"], "%A %B %d %Y %I:%M %p")
-                ical_event = icalendar.Event()
-                ical_event.add("summary", event["name"])
-                ical_event.add("dtstart", dt)
-                ical_event.add("dtend", dt + timedelta(hours=1))
-                ical_event.add("dtstamp", datetime.now())
-                economics_calendar.add_component(ical_event)
-        else:
-            logging.warning("No events found on the events calendar.")
+    # Scrape events calendar
+    economic_events = scrape_events_calendar()
+    if economic_events:
+        economics_calendar = icalendar.Calendar()
+        for event in economic_events:
+            dt = datetime.strptime(event["date"] + " " + event["time"], "%A %B %d %Y %I:%M %p")
+            ical_event = icalendar.Event()
+            ical_event.add("summary", event["name"])
+            ical_event.add("dtstart", dt)
+            ical_event.add("dtend", dt + timedelta(hours=1))
+            ical_event.add("dtstamp", datetime.now())
+            economics_calendar.add_component(ical_event)
+    else:
+        logging.warning("No events found on the events calendar.")
 
-        # Scrape schedule calendar
-        schedule_calendar = scrape_schedule_calendar()
-        if schedule_calendar:
-            # Merge calendars
-            merged_calendar = icalendar.Calendar()
-            merged_calendar.add('prodid', '-//Market Calendar//')
-            merged_calendar.add('version', '2.0')
-            if economics_calendar:
-                for component in economics_calendar.walk():
-                    merged_calendar.add_component(component)
-            if schedule_calendar:
-                for component in schedule_calendar.walk():
-                    merged_calendar.add_component(component)
-
-            filename = "Market.ics"
-            save_calendar_locally(merged_calendar, filename)
-            logging.info("Calendar merged and saved successfully.")
-
-        else:
-            logging.warning("No events found on the schedule calendar.")
-
-    except Exception as e:
-        logging.exception(f"An error occurred during calendar update: {str(e)}")
-        raise
+    # Save and upload the calendar to GCS
+    if economics_calendar:
+        save_calendar_to_gcs(economics_calendar)
+    else:
+        logging.warning("No events to update in the calendar.")
 
 
 # Run the scraper and update the calendar immediately
@@ -210,7 +116,6 @@ if __name__ == "__main__":
     logging.info(f"Log file path: {log_file_path}")
 
     update_calendar()
-    scrape_schedule_calendar()
 
     # Add logging to print the log file path after execution
     log_file_path_after = os.path.abspath('scraper_log.log')
