@@ -175,7 +175,7 @@ def update_calendar():
                 for component in schedule_calendar.walk():
                     merged_calendar.add_component(component)
 
-            filename = "Market_local.ics"
+            filename = "Market.ics"
             save_calendar_locally(merged_calendar, filename)
             logging.info("Calendar merged and saved successfully.")
 
@@ -199,10 +199,6 @@ if __name__ == "__main__":
 
     update_calendar()
     scrape_schedule_calendar()
-
-    # Add logging to print the log file path after execution
-    log_file_path_after = os.path.abspath('scraper_log.log')
-    logging.info(f"Log file path after execution: {log_file_path_after}")
 
     # Add logging to print the log file path after execution
     log_file_path_after = os.path.abspath('scraper_log.log')
