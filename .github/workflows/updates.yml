@@ -46,6 +46,10 @@ jobs:
           EVENT_URL: ${{ secrets.EVENT_URL }}
           GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GCP_SA_KEY }}
 
+      - name: Delete existing files in GCS bucket
+        run: |
+          gsutil -m rm -r gs://market-calendar-bucket/**
+
       - name: Upload file to GCS
         run: |
           gsutil cp Market.ics gs://market-calendar-bucket/
