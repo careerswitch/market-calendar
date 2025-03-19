@@ -22,7 +22,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v3
         with:
-          python-version: '3.x'
+          python-version: '3.11'
 
       - name: Install dependencies
         run: |
@@ -62,7 +62,6 @@ jobs:
         run: |
           gsutil ls gs://market-calendar-bucket/
 
-      # Optionally, upload log file to GCS as well
       - name: Upload Log File to GCS
         run: |
           gsutil cp scraper_log.log gs://market-calendar-bucket/
