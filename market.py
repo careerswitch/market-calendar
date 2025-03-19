@@ -1,15 +1,13 @@
-#!/usr/bin/env python
-
 import os
 from datetime import datetime, timedelta
 import icalendar
 import logging
+from fake_useragent import UserAgent
+import pandas as pd
+from google.cloud import storage
 import requests
 from bs4 import BeautifulSoup
-from fake_useragent import UserAgent
-from google.cloud import storage
 import pytz
-from tzlocal import get_localzone
 
 # Configure logging
 logging.basicConfig(filename='scraper_log.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -30,8 +28,8 @@ def make_request(url, timeout=10):
 
 # Function to determine if daylight saving time is in effect for a given date
 def is_dst(date):
-    timezone = get_localzone()
-    return timezone.localize(date).dst() != timedelta(0)
+    timezone = pytz.timezone('US/Eastern')  # Adjust timezone as per your requirement
+    return timezone.localize(date, is_dst=None).dst() != timedelta(0)
 
 
 # Function to scrape events calendar
@@ -60,14 +58,12 @@ def scrape_events_calendar():
                     time_str = time_element.get_text(strip=True)
                     time = datetime.strptime(time_str, "%I:%M %p")
                     if is_dst(current_date):
-                        local_offset = get_localzone().localize(datetime.now()).utcoffset().total_seconds() / 3600
-                        time -= timedelta(hours=local_offset)
+                        time += timedelta(hours=3)
                     else:
-                        local_offset = get_localzone().localize(datetime.now()).utcoffset().total_seconds() / 3600
-                        time -= timedelta(hours=local_offset + 1)  # Adjust for standard time
-                    time_str_adjusted = time.strftime("%I:%M %p")
+                        time += timedelta(hours=2)
+                    time_str_plus_3 = time.strftime("%I:%M %p")
                     events.append(
-                        {"date": current_date.strftime("%A %B %d %Y"), "time": time_str_adjusted, "name": event})
+                        {"date": current_date.strftime("%A %B %d %Y"), "time": time_str_plus_3, "name": event})
         return events
     except Exception as e:
         logging.error(f"An error occurred while scraping the events website: {str(e)}")
