@@ -13,6 +13,7 @@ import pytz
 logging.basicConfig(filename='scraper_log.log', level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
+
 def make_request(url, timeout=10):
     ua = UserAgent()
     headers = {'User-Agent': ua.random}
@@ -23,6 +24,7 @@ def make_request(url, timeout=10):
     except requests.exceptions.RequestException as error:
         logging.error(f"Request error occurred: {error}")
         raise
+
 
 def scrape_events_calendar():
     try:
@@ -43,21 +45,17 @@ def scrape_events_calendar():
         for row in rows:
             date_element = row.find("th")
             if date_element:
-                current_date = date_element.get_text(strip=True)
-                current_date = datetime.strptime(current_date, "%A %B %d %Y")
+                date_text = date_element.get_text(strip=True)
+                current_date = datetime.strptime(date_text, "%A %B %d %Y")
             time_element = row.find(class_="calendar-date-3")
             if time_element and current_date:
                 event_element = row.find(class_="calendar-event")
                 if event_element:
                     event = event_element.get_text(strip=True)
                     time_str = time_element.get_text(strip=True)
-                    # Parse the time string
                     naive_time = datetime.strptime(time_str, "%I:%M %p")
-                    # Combine date and time
                     combined = datetime.combine(current_date.date(), naive_time.time())
-                    # Treat combined as US Eastern time
                     eastern_time = eastern_tz.localize(combined)
-                    # Convert to Romania local time
                     romania_time = eastern_time.astimezone(romania_tz)
                     romania_time_str = romania_time.strftime("%I:%M %p")
                     events.append({
@@ -69,6 +67,7 @@ def scrape_events_calendar():
     except Exception as e:
         logging.error(f"An error occurred while scraping the events website: {str(e)}")
         return None
+
 
 def save_calendar_to_gcs(calendar):
     try:
@@ -84,6 +83,7 @@ def save_calendar_to_gcs(calendar):
         os.remove(filename)
     except Exception as e:
         logging.error(f"An error occurred while saving the calendar to Google Cloud Storage: {str(e)}")
+
 
 def update_calendar():
     economic_events = scrape_events_calendar()
@@ -101,7 +101,6 @@ def update_calendar():
     else:
         logging.warning("No events found on the events calendar.")
 
-update_calendar()
 
 if __name__ == "__main__":
     logging.info("Starting calendar update process")
