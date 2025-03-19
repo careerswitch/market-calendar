@@ -10,10 +10,13 @@ from bs4 import BeautifulSoup
 import pytz
 
 # Configure logging
-logging.basicConfig(filename='scraper_log.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    filename='scraper_log.log',
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 
 
-# Function to make HTTP request with proper error handling
 def make_request(url, timeout=10):
     ua = UserAgent()
     headers = {'User-Agent': ua.random}
@@ -26,30 +29,51 @@ def make_request(url, timeout=10):
         raise
 
 
-# Function to determine if daylight saving time is in effect for a given date
-def is_dst(date):
-    timezone = pytz.timezone('US/Eastern')  # Adjust timezone as per your requirement
-    return timezone.localize(date, is_dst=None).dst() != timedelta(0)
+def convert_time_to_eet(date_obj, time_obj):
+    """
+    Convert a US/Eastern datetime to Europe/Bucharest time.
+
+    date_obj: datetime object (date part)
+    time_obj: datetime object (time part)
+
+    Returns: converted datetime object in EET/EEST timezone
+    """
+    # Combine date and time into a single datetime object
+    naive_dt = datetime.combine(date_obj.date(), time_obj.time())
+
+    # Define timezones
+    eastern_tz = pytz.timezone('US/Eastern')
+    bucharest_tz = pytz.timezone('Europe/Bucharest')
+
+    # Localize to US/Eastern timezone (handles DST automatically)
+    eastern_dt = eastern_tz.localize(naive_dt)
+
+    # Convert to Europe/Bucharest timezone (handles DST automatically)
+    bucharest_dt = eastern_dt.astimezone(bucharest_tz)
+
+    return bucharest_dt
 
 
-# Function to scrape events calendar
 def scrape_events_calendar():
     try:
         url = os.environ.get("EVENT_URL")
         response = make_request(url)
         soup = BeautifulSoup(response.content, "html.parser")
         calendar_table = soup.find(id="calendar")
+
         if calendar_table is None:
             raise ValueError("Calendar table not found on the events webpage.")
+
         rows = calendar_table.find_all("tr")[1:]
         current_date = ""
         events = []
+
         for row in rows:
             date_element = row.find("th")
             if date_element:
-                current_date = date_element.get_text(strip=True)
-                # Parsing the date with the day of the week
-                current_date = datetime.strptime(current_date, "%A %B %d %Y")
+                current_date_str = date_element.get_text(strip=True)
+                current_date = datetime.strptime(current_date_str, "%A %B %d %Y")
+
             time_element = row.find(class_="calendar-date-3")
             if time_element:
                 event_element = row.find(class_="calendar-event")
@@ -57,28 +81,31 @@ def scrape_events_calendar():
                     event = event_element.get_text(strip=True)
                     time_str = time_element.get_text(strip=True)
                     time = datetime.strptime(time_str, "%I:%M %p")
-                    if is_dst(current_date):
-                        time += timedelta(hours=3)
-                    else:
-                        time += timedelta(hours=2)
-                    time_str_plus_3 = time.strftime("%I:%M %p")
-                    events.append(
-                        {"date": current_date.strftime("%A %B %d %Y"), "time": time_str_plus_3, "name": event})
+
+                    # Convert time from US/Eastern to Europe/Bucharest (EET/EEST)
+                    converted_dt = convert_time_to_eet(current_date, time)
+                    converted_date_str = converted_dt.strftime("%A %B %d %Y")
+                    converted_time_str = converted_dt.strftime("%I:%M %p")
+
+                    events.append({
+                        "date": converted_date_str,
+                        "time": converted_time_str,
+                        "name": event
+                    })
+
         return events
+
     except Exception as e:
         logging.error(f"An error occurred while scraping the events website: {str(e)}")
         return None
 
 
-# Function to save calendar to Google Cloud Storage
 def save_calendar_to_gcs(calendar):
     try:
-        # Save the calendar file locally
         filename = "Market.ics"
         with open(filename, 'wb') as f:
             f.write(calendar.to_ical())
 
-        # Upload the calendar file to GCS
         client = storage.Client.from_service_account_json(os.environ["GOOGLE_APPLICATION_CREDENTIALS"])
         bucket_name = "market-calendar-bucket"
         bucket = client.get_bucket(bucket_name)
@@ -87,16 +114,13 @@ def save_calendar_to_gcs(calendar):
 
         logging.info(f"Calendar uploaded to Google Cloud Storage: gs://{bucket_name}/{filename}")
 
-        # Optional: Remove the local file after uploading to GCS
         os.remove(filename)
 
     except Exception as e:
         logging.error(f"An error occurred while saving the calendar to Google Cloud Storage: {str(e)}")
 
 
-# Function to update the calendar
 def update_calendar():
-    # Scrape events calendar
     economic_events = scrape_events_calendar()
     if economic_events:
         economics_calendar = icalendar.Calendar()
@@ -109,7 +133,6 @@ def update_calendar():
             ical_event.add("dtstamp", datetime.now())
             economics_calendar.add_component(ical_event)
 
-        # Save and upload the calendar to GCS
         save_calendar_to_gcs(economics_calendar)
 
     else:
@@ -122,12 +145,10 @@ update_calendar()
 if __name__ == "__main__":
     logging.info("Starting calendar update process")
 
-    # Add logging to print the log file path
     log_file_path = os.path.abspath('scraper_log.log')
     logging.info(f"Log file path: {log_file_path}")
 
     update_calendar()
 
-    # Add logging to print the log file path after execution
     log_file_path_after = os.path.abspath('scraper_log.log')
     logging.info(f"Log file path after execution: {log_file_path_after}")
