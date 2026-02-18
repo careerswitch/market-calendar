@@ -15,11 +15,11 @@ logging.basicConfig(filename='scraper_log.log', level=logging.INFO, format='%(as
 
 
 # Function to make HTTP request with proper error handling
-def make_request(url, timeout=10):
+def make_request(url, params=None, timeout=10): # Modified to accept params
     ua = UserAgent()
     headers = {'User-Agent': ua.random}
     try:
-        response = requests.get(url, headers=headers, timeout=timeout)
+        response = requests.get(url, headers=headers, params=params, timeout=timeout) # Pass params
         response.raise_for_status()
         return response
     except requests.exceptions.RequestException as error:
@@ -27,26 +27,30 @@ def make_request(url, timeout=10):
         raise
 
 
-# Function to determine if daylight saving time is in effect for a given date
-def is_dst(date):
-    timezone = pytz.timezone('US/Eastern')  # Adjust timezone as per your requirement
-    return timezone.localize(date, is_dst=None).dst() != timedelta(0)
-
-
-# Function to scrape events calendar
+# Function to scrape events calendar (updated with logic from console_output.py)
 def scrape_events_calendar():
     try:
-        url = os.environ.get("EVENT_URL")
-        response = make_request(url)
+        base_url = "https://tradingeconomics.com/calendar" # New base_url
+        params = {
+            'importance': '3',  # Three stars
+            'c': 'United States',  # Country
+            'range': 'next_month'  # This month
+        }
+        # Use base_url and params, not os.environ.get("EVENT_URL") for scraping
+        response = make_request(base_url, params=params)
         soup = BeautifulSoup(response.content, "html.parser")
+
         calendar_table = soup.find(id="calendar")
         if calendar_table is None:
             raise ValueError("Calendar table not found on the events webpage.")
-        rows = calendar_table.find_all("tr")[1:]
+        
+        rows = calendar_table.find_all("tr")[1:] # Keep original row selection
+
         current_date = ""
         events = []
         for row in rows:
-            date_element = row.find("th")
+            # Updated date and time element finding from console_output.py
+            date_element = row.find("th", style="text-align: left;") 
             if date_element:
                 current_date = date_element.get_text(strip=True)
                 # Parsing the date with the day of the week
@@ -58,11 +62,8 @@ def scrape_events_calendar():
                     event = event_element.get_text(strip=True)
                     time_str = time_element.get_text(strip=True)
                     time = datetime.strptime(time_str, "%I:%M %p")
-                    if is_dst(current_date):
-                        time += timedelta(hours=3)
-                    else:
-                        time += timedelta(hours=2)
-                    time_str_plus_3 = time.strftime("%I:%M %p")
+                    # Fixed +3 hours adjustment from console_output.py, no is_dst
+                    time_str_plus_3 = (time + timedelta(hours=3)).strftime("%I:%M %p")
                     events.append(
                         {"date": current_date.strftime("%A %B %d %Y"), "time": time_str_plus_3, "name": event})
         return events
