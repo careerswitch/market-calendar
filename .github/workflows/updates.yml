@@ -41,7 +41,7 @@ jobs:
 
       - name: Run the scraper and update calendar
         run: |
-          python market.py  # Adjust command as needed
+          python events.py  # Adjust command as needed
         env:
           EVENT_URL: ${{ secrets.EVENT_URL }}
 
