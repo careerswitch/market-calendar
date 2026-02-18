@@ -44,7 +44,6 @@ jobs:
           python market.py  # Adjust command as needed
         env:
           EVENT_URL: ${{ secrets.EVENT_URL }}
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GCP_SA_KEY }}
 
       - name: Delete existing files in GCS bucket
         run: |

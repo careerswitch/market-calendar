@@ -41,7 +41,7 @@ def scrape_events_calendar():
         calendar_table = soup.find(id="calendar")
         if calendar_table is None:
             raise ValueError("Calendar table not found on the events webpage.")
-        rows = calendar_table.find_all("tr")[1:]
+        rows = calendar_table.find("tbody").find_all("tr") # Added tbody to specifically target the body of the table
         current_date = ""
         events = []
         for row in rows:
@@ -79,7 +79,7 @@ def save_calendar_to_gcs(calendar):
             f.write(calendar.to_ical())
 
         # Upload the calendar file to GCS
-        client = storage.Client.from_service_account_json(os.environ["GOOGLE_APPLICATION_CREDENTIALS"])
+        client = storage.Client() # Changed to use default credentials, which should be set by github action
         bucket_name = "market-calendar-bucket"
         bucket = client.get_bucket(bucket_name)
         blob = bucket.blob(filename)
@@ -115,9 +115,6 @@ def update_calendar():
     else:
         logging.warning("No events found on the events calendar.")
 
-
-# Run the scraper and update the calendar immediately
-update_calendar()
 
 if __name__ == "__main__":
     logging.info("Starting calendar update process")
