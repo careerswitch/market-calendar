@@ -45,9 +45,9 @@ jobs:
         env:
           EVENT_URL: ${{ secrets.EVENT_URL }}
 
-      - name: Delete existing files in GCS bucket
-        run: |
-          gsutil -m rm -r gs://market-calendar-bucket/**
+      # - name: Delete existing files in GCS bucket
+      #   run: |
+      #     gsutil -m rm -r gs://market-calendar-bucket/**
 
       - name: Upload file to GCS
         run: |
