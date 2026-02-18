@@ -49,10 +49,6 @@ jobs:
         run: |
           cat scraper_log.log
           
-      - name: Delete existing files in GCS bucket
-        run: |
-          gsutil -m rm -r gs://market-calendar-bucket/
-
       - name: Upload file to GCS
         run: |
           gsutil cp Market.ics gs://market-calendar-bucket/
