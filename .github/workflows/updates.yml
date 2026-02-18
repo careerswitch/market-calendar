@@ -41,14 +41,10 @@ jobs:
 
       - name: Run the scraper and update calendar
         run: |
-          python events.py  # Adjust command as needed
+          python market.py  # Adjust command as needed
         env:
           EVENT_URL: ${{ secrets.EVENT_URL }}
 
-      - name: Print scraper log
-        run: |
-          cat scraper_log.log
-          
       - name: Delete existing files in GCS bucket
         run: |
           gsutil -m rm -r gs://market-calendar-bucket/**
