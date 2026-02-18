@@ -51,7 +51,7 @@ jobs:
           
       - name: Delete existing files in GCS bucket
         run: |
-          gsutil -m rm -r gs://market-calendar-bucket/**
+          gsutil -m rm -r gs://market-calendar-bucket/
 
       - name: Upload file to GCS
         run: |
