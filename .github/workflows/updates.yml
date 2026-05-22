@@ -59,7 +59,7 @@ jobs:
 
       - name: Set ACL for Market.ics
         run: |
-          gsutil acl ch -u AllUsers:R gs://market-calendar-bucket-497119/Market.ics
+          gsutil iam ch allUsers:objectViewer gs://market-calendar-bucket-497119
 
       - name: List Files in GCS Bucket
         run: |
