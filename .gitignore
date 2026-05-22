@@ -1,0 +1,16 @@
+secrets.json
+scraper_log.log
+*.ics
+testing/
+templates/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.idea/
+.vscode/
+.DS_Store
+*.log
+*.sqlite3
+*.db

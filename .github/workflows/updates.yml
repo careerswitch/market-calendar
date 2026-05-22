@@ -41,16 +41,15 @@ jobs:
 
       - name: Run the scraper and update calendar
         run: |
-          python market.py  # Adjust command as needed
+          python calendar_sync.py
         env:
           EVENT_URL: ${{ secrets.EVENT_URL }}
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GCP_SA_KEY }}
 
-      - name: Delete existing files in GCS bucket
+      - name: Delete existing file from GCS bucket
         run: |
-          gsutil -m rm -r gs://market-calendar-bucket/**
+          gsutil rm -f gs://market-calendar-bucket/Market.ics
 
-      - name: Upload file to GCS
+      - name: Upload Market.ics to GCS
         run: |
           gsutil cp Market.ics gs://market-calendar-bucket/
 
