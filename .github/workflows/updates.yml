@@ -51,7 +51,7 @@ jobs:
 
       - name: Delete existing file from GCS bucket
         run: |
-          gsutil rm -f gs://market-calendar-bucket/Market.ics
+          gsutil rm gs://market-calendar-bucket/Market.ics || true
 
       - name: Upload Market.ics to GCS
         run: |
