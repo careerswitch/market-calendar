@@ -45,6 +45,10 @@ jobs:
         env:
           EVENT_URL: ${{ secrets.EVENT_URL }}
 
+      - name: Print scraper log
+        run: |
+          cat scraper_log.log
+
       - name: Delete existing file from GCS bucket
         run: |
           gsutil rm -f gs://market-calendar-bucket/Market.ics
