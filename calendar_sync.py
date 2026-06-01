@@ -16,7 +16,6 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-EASTERN_TZ = pytz.timezone('US/Eastern')
 BUCHAREST_TZ = pytz.timezone('Europe/Bucharest')
 
 
@@ -34,8 +33,8 @@ def make_request(url, params=None, timeout=10):
 
 def convert_to_bucharest(date_obj, time_obj):
     naive_dt = datetime.combine(date_obj.date(), time_obj.time())
-    eastern_dt = EASTERN_TZ.localize(naive_dt)
-    return eastern_dt.astimezone(BUCHAREST_TZ)
+    utc_dt = pytz.utc.localize(naive_dt)
+    return utc_dt.astimezone(BUCHAREST_TZ)
 
 
 def _add_event(calendar, event_name, converted_dt, seen_events):

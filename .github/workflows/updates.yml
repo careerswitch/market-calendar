@@ -45,22 +45,23 @@ jobs:
         env:
           EVENT_URL: ${{ secrets.EVENT_URL }}
 
+      - name: Print scraper log
+        run: |
+          cat scraper_log.log
+
       - name: Delete existing file from GCS bucket
         run: |
-          gsutil rm -f gs://market-calendar-bucket/Market.ics
+          gsutil rm gs://market-calendar-bucket-497119/Market.ics || true
 
       - name: Upload Market.ics to GCS
         run: |
-          gsutil cp Market.ics gs://market-calendar-bucket/
+          gsutil cp Market.ics gs://market-calendar-bucket-497119/
 
-      - name: Set ACL for Market.ics
-        run: |
-          gsutil acl ch -u AllUsers:R gs://market-calendar-bucket/Market.ics
 
       - name: List Files in GCS Bucket
         run: |
-          gsutil ls gs://market-calendar-bucket/
+          gsutil ls gs://market-calendar-bucket-497119/
 
       - name: Upload Log File to GCS
         run: |
-          gsutil cp scraper_log.log gs://market-calendar-bucket/
+          gsutil cp scraper_log.log gs://market-calendar-bucket-497119/
